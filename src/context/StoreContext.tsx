@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Note, StoreContextType, UserSettings } from '../types';
 
@@ -66,7 +66,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return Array.from(new Set(matches.map(tag => tag.substring(1)))); // Remove # and dedupe
     };
 
-    const createNote = (content: string = '') => {
+    const createNote = useCallback((content: string = '') => {
         const newNote: Note = {
             id: uuidv4(),
             content,
@@ -76,9 +76,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         };
         setNotes(prev => [newNote, ...prev]);
         return newNote.id;
-    };
+    }, []);
 
-    const updateNote = (id: string, content: string) => {
+    const updateNote = useCallback((id: string, content: string) => {
         setNotes(prev => prev.map(note => {
             if (note.id === id) {
                 return {
@@ -90,36 +90,38 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             }
             return note;
         }));
-    };
+    }, []);
 
-    const deleteNote = (id: string) => {
+    const deleteNote = useCallback((id: string) => {
         setNotes(prev => prev.filter(n => n.id !== id));
-    };
+    }, []);
 
-    const getNote = (id: string) => {
+    const getNote = useCallback((id: string) => {
         return notes.find(n => n.id === id);
-    };
+    }, [notes]);
 
-    const updateSettings = (newSettings: Partial<UserSettings>) => {
+    const updateSettings = useCallback((newSettings: Partial<UserSettings>) => {
         setSettings(prev => ({ ...prev, ...newSettings }));
-    };
+    }, []);
 
     const [isFocusMode, setIsFocusMode] = useState(false);
-    const toggleFocusMode = () => setIsFocusMode(prev => !prev);
+    const toggleFocusMode = useCallback(() => setIsFocusMode(prev => !prev), []);
+
+    const value = React.useMemo(() => ({
+        notes,
+        loading,
+        createNote,
+        updateNote,
+        deleteNote,
+        getNote,
+        settings,
+        updateSettings,
+        isFocusMode,
+        toggleFocusMode
+    }), [notes, loading, createNote, updateNote, deleteNote, getNote, settings, updateSettings, isFocusMode, toggleFocusMode]);
 
     return (
-        <StoreContext.Provider value={{
-            notes,
-            loading,
-            createNote,
-            updateNote,
-            deleteNote,
-            getNote,
-            settings,
-            updateSettings,
-            isFocusMode,
-            toggleFocusMode
-        }}>
+        <StoreContext.Provider value={value}>
             {children}
         </StoreContext.Provider>
     );

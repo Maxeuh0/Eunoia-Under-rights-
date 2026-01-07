@@ -25,6 +25,11 @@ dist-ssr
 
 # Electron build outputs (upload to GitHub Releases instead)
 release/
+release_new/
+release_final/
+release_v4/
+dist/
+dist-electron/
 Installers/
 *.exe
 *.blockmap

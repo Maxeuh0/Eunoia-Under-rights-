@@ -1,7 +1,7 @@
 {
   "name": "eunoia-app",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "A Zen Personal Knowledge Management App",
   "author": "Eunoia Team",
   "type": "module",
@@ -20,7 +20,7 @@
     "icon": "build/icon.ico",
     "afterPack": "./afterPack.cjs",
     "directories": {
-      "output": "release"
+      "output": "release_v4"
     },
     "files": [
       "dist/**/*",

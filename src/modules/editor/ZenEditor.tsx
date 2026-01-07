@@ -64,20 +64,29 @@ const ZenEditor: React.FC = () => {
     };
 
     // Load note
+    const lastLoadedId = React.useRef<string | null>(null);
+
+    // Load note
     useEffect(() => {
         if (noteId) {
-            const note = getNote(noteId);
-            if (note) {
-                setContent(note.content);
-                setLastSavedContent(note.content);
-            } else {
-                navigate('/editor');
+            // Only load if it's a DIFFERENT note than what we last loaded
+            if (noteId !== lastLoadedId.current) {
+                const note = getNote(noteId);
+                if (note) {
+                    setContent(note.content);
+                    setLastSavedContent(note.content);
+                    lastLoadedId.current = noteId;
+                }
+                // Don't navigate away immediately if not found.
+                // React state updates might be pending.
+                // The logical "Not Found" handling can be done in render if needed.
             }
         } else {
             setContent('');
             setLastSavedContent('');
+            lastLoadedId.current = null;
         }
-    }, [noteId, getNote, navigate]);
+    }, [noteId, getNote]);
 
     // Autosave Logic
     useEffect(() => {
