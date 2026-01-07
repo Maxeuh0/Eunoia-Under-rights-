@@ -28,3 +28,6 @@ release/
 Installers/
 *.exe
 *.blockmap
+
+# Internal documentation (local only)
+GUIDE_MISES_A_JOUR.md
