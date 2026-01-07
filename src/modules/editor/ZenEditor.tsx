@@ -127,11 +127,13 @@ const ZenEditor: React.FC = () => {
     };
 
     const handleDelete = () => {
-        if (window.confirm('Are you sure you want to delete this thought?')) {
-            if (noteId) {
-                deleteNote(noteId);
-                navigate('/editor');
-            }
+        // REMOVED window.confirm temporarily to debug focus loss issue.
+        // Native dialogs in Electron can sometimes steal focus permanently until clicked.
+        if (noteId) {
+            deleteNote(noteId);
+            navigate('/editor');
+            // Explicitly reclaim focus for the main window
+            window.focus();
         }
     };
 
@@ -140,9 +142,17 @@ const ZenEditor: React.FC = () => {
             return Prism.highlight(code || '', Prism.languages.markdown, 'markdown');
         } catch (e) {
             console.error(e);
-            return code; // Fallback to plain text if Prism fails
+            return code;
         }
     };
+
+    // Force focus on mount
+    useEffect(() => {
+        const textarea = document.querySelector('textarea');
+        if (textarea) {
+            textarea.focus();
+        }
+    }, [noteId]);
 
     if (!noteId) {
         return (
