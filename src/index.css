@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  html,
+  body {
+    @apply h-full w-full overflow-hidden;
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-gray-300 font-sans transition-colors duration-300 ease-in-out;
+  }
+
+  /* Custom Scrollbar for Webkit */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-stone-300 dark:bg-stone-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-stone-400 dark:bg-stone-600;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/50 dark:bg-gray-900/30 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm border border-white/30 dark:border-white/5 shadow-lg hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all duration-300;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+
+  /* Utility classes for drag regions */
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  /* Hide React Flow Attribution */
+  .react-flow__attribution {
+    display: none !important;
+  }
+
+  /* Selected Edge Blue */
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke: #3b82f6 !important;
+    /* Blue-500 */
+    stroke-width: 3 !important;
+  }
+}
