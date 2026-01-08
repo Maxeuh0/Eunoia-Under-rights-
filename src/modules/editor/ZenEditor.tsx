@@ -13,128 +13,45 @@ import 'prismjs/themes/prism.css';
 const ZenEditor: React.FC = () => {
     const { noteId } = useParams<{ noteId: string }>();
     const navigate = useNavigate();
-    const { getNote, updateNote, createNote, deleteNote, isFocusMode, toggleFocusMode } = useStore();
+    const { getNote, updateNote, createNote, deleteNote, isFocusMode, toggleFocusMode, notes } = useStore();
 
-    const [content, setContent] = useState('');
-    const [lastSavedContent, setLastSavedContent] = useState('');
-    const [isPreviewVisible, setIsPreviewVisible] = useState(true);
-    // const [isFocusMode, setIsFocusMode] = useState(false); // Removed local state
-    const [status, setStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+    // ... existing state ...
 
-    // Timer State
-    const [timerActive, setTimerActive] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes default
-
-    // Timer Logic
-    useEffect(() => {
-        let interval: NodeJS.Timeout | null = null;
-        if (timerActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
-            }, 1000);
-        } else if (timeLeft === 0) {
-            setTimerActive(false);
-            // Timer Finished Feedback (Visual Pulse)
-            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'); // Silent base just for object, or actually play a bell if I had one. 
-            // For now, let's just use a visual cue by setting status or similar.
-            // Using a simple beep helper or just notification API if allowed.
-            if (Notification.permission === 'granted') {
-                new Notification("Flow Session Complete");
-            } else if (Notification.permission !== 'denied') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') new Notification("Flow Session Complete");
-                });
-            }
-        }
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [timerActive, timeLeft]);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const toggleTimer = () => setTimerActive(!timerActive);
-    const resetTimer = () => {
-        setTimerActive(false);
-        setTimeLeft(25 * 60);
-    };
-
-    // Load note
-    const lastLoadedId = React.useRef<string | null>(null);
-
-    // Load note
-    useEffect(() => {
-        if (noteId) {
-            // Only load if it's a DIFFERENT note than what we last loaded
-            if (noteId !== lastLoadedId.current) {
-                const note = getNote(noteId);
-                if (note) {
-                    setContent(note.content);
-                    setLastSavedContent(note.content);
-                    lastLoadedId.current = noteId;
-                }
-                // Don't navigate away immediately if not found.
-                // React state updates might be pending.
-                // The logical "Not Found" handling can be done in render if needed.
-            }
-        } else {
-            setContent('');
-            setLastSavedContent('');
-            lastLoadedId.current = null;
-        }
-    }, [noteId, getNote]);
-
-    // Autosave Logic
-    useEffect(() => {
-        if (!noteId || content === lastSavedContent) return;
-
-        setStatus('unsaved');
-        const timer = setTimeout(() => {
-            setStatus('saving');
-            updateNote(noteId, content);
-            setLastSavedContent(content);
-            setTimeout(() => setStatus('saved'), 500);
-        }, 1500);
-
-        return () => clearTimeout(timer);
-    }, [content, noteId, lastSavedContent, updateNote]);
-
-    // Ctrl+S Handler (Reassuring Save)
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                if (noteId) {
-                    setStatus('saving');
-                    updateNote(noteId, content);
-                    setLastSavedContent(content);
-                    setTimeout(() => setStatus('saved'), 500);
-                }
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [content, noteId, updateNote]);
+    // ... existing effects ...
 
     const handleCreateAndEdit = () => {
-        const newId = createNote("# New Thought\n\nStart writing...");
+        const newId = createNote("# New Idea\n\nStart writing..."); // Changed text to distinguish versions
         navigate(`/editor/${newId}`);
     };
 
     const handleDelete = () => {
-        // REMOVED window.confirm temporarily to debug focus loss issue.
-        // Native dialogs in Electron can sometimes steal focus permanently until clicked.
-        if (noteId) {
-            deleteNote(noteId);
-            navigate('/editor');
-            // Explicitly reclaim focus for the main window
-            window.focus();
+        if (!noteId) return;
+
+        // Find adjacent note before deleting
+        const currentIndex = notes.findIndex(n => n.id === noteId);
+        let nextNoteId = null;
+
+        if (notes.length > 1) {
+            // If there's a next note, take it. Otherwise take previous.
+            if (currentIndex < notes.length - 1) {
+                nextNoteId = notes[currentIndex + 1].id;
+            } else if (currentIndex > 0) {
+                nextNoteId = notes[currentIndex - 1].id;
+            }
         }
+
+        // Perform delete
+        deleteNote(noteId);
+
+        // Navigate
+        if (nextNoteId) {
+            navigate(`/editor/${nextNoteId}`);
+        } else {
+            navigate('/editor');
+        }
+
+        // Explicit focus
+        setTimeout(() => window.focus(), 50);
     };
 
     const safeHighlight = (code: string) => {
