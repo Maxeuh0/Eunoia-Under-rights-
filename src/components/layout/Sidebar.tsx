@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     PenTool,
     Network,
@@ -24,6 +24,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     // but Modal gets them from context directly. We keep notes/createNote.
     const { notes, createNote } = useStore();
     const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const activeNoteId = pathname.split('/editor/')[1];
     const [search, setSearch] = useState('');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -117,6 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                             No thoughts yet.
                         </div>
                     ) : (
+
                         filteredNotes.map(note => (
                             <div
                                 key={note.id}
@@ -124,16 +127,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                                     navigate(`/editor/${note.id}`);
                                     if (window.innerWidth < 768 && onClose) onClose();
                                 }}
-                                className="p-3 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800/50 cursor-pointer group transition-colors"
+                                className={`
+                                    p-3 rounded-lg cursor-pointer group transition-colors
+                                    ${note.id === activeNoteId
+                                        ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50'
+                                        : 'hover:bg-stone-100 dark:hover:bg-stone-800/50 border border-transparent'}
+                                `}
                             >
-                                <h3 className="font-medium text-stone-700 dark:text-stone-300 truncate text-sm">
+                                <h3 className={`font-medium truncate text-sm ${note.id === activeNoteId ? 'text-amber-900 dark:text-amber-100' : 'text-stone-700 dark:text-stone-300'}`}>
                                     {note.content.split('\n')[0] || 'Untitled'}
                                 </h3>
                                 <div className="flex items-center justify-between mt-1">
-                                    <span className="text-xs text-stone-400">
+                                    <span className={`text-xs ${note.id === activeNoteId ? 'text-amber-700/70 dark:text-amber-300/70' : 'text-stone-400'}`}>
                                         {formatDistanceToNow(new Date(note.updatedAt))} ago
                                     </span>
-                                    <span className="text-xs text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className={`text-xs text-amber-600 dark:text-amber-400 transition-opacity ${note.id === activeNoteId ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                         ➜
                                     </span>
                                 </div>
