@@ -14,8 +14,7 @@ import {
     Pause,
     SkipBack,
     SkipForward,
-    Music,
-    Volume2
+    Music
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatDistanceToNow } from 'date-fns';

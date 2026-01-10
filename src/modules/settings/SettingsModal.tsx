@@ -30,7 +30,7 @@ declare global {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { settings, updateSettings } = useStore();
     const [isVisible, setIsVisible] = useState(false);
-    const [appVersion, setAppVersion] = useState('0.1.12');
+    const [appVersion, setAppVersion] = useState('0.1.13');
     const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ status: 'idle' });
 
     useEffect(() => {
