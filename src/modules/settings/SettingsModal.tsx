@@ -30,7 +30,7 @@ declare global {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { settings, updateSettings } = useStore();
     const [isVisible, setIsVisible] = useState(false);
-    const [appVersion, setAppVersion] = useState('0.1.1');
+    const [appVersion, setAppVersion] = useState('0.1.12');
     const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({ status: 'idle' });
 
     useEffect(() => {
@@ -258,24 +258,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                     <div className="h-px bg-stone-200 dark:bg-stone-800 my-6" />
 
                     {/* Support Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wider">Support</h3>
+                    {/* Support Section - Temporarily hidden */}
+                    {false && (
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium text-stone-500 uppercase tracking-wider">Support</h3>
 
-                        <a
-                            href={atob('aHR0cHM6Ly9idXltZWFjb2ZmZWUuY29tL01heGV1aDA=') /* Basic Obfuscation */}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors group border border-amber-100 dark:border-amber-900/30"
-                        >
-                            <div className="p-2 bg-white dark:bg-stone-800 rounded-lg shadow-sm text-amber-600 group-hover:scale-110 transition-transform duration-300">
-                                <Coffee size={24} />
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-medium text-stone-900 dark:text-stone-100">Support the Creator</h4>
-                                <p className="text-sm text-stone-500 dark:text-stone-400">Secure donation link.</p>
-                            </div>
-                        </a>
-                    </div>
+                            <a
+                                href={atob('aHR0cHM6Ly9idXltZWFjb2ZmZWUuY29tL01heGV1aDA=') /* Basic Obfuscation */}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/20 transition-colors group border border-amber-100 dark:border-amber-900/30"
+                            >
+                                <div className="p-2 bg-white dark:bg-stone-800 rounded-lg shadow-sm text-amber-600 group-hover:scale-110 transition-transform duration-300">
+                                    <Coffee size={24} />
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="font-medium text-stone-900 dark:text-stone-100">Support the Creator</h4>
+                                    <p className="text-sm text-stone-500 dark:text-stone-400">Secure donation link.</p>
+                                </div>
+                            </a>
+                        </div>
+                    )}
 
                     <div className="mt-6 text-center">
                         <p className="text-xs text-stone-400">Eunoia v{appVersion} • © 2026 Eunoia Team. All Rights Reserved.</p>

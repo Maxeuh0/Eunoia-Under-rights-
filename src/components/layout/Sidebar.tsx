@@ -9,7 +9,13 @@ import {
     Plus,
     Search,
     Layout,
-    X
+    X,
+    Play,
+    Pause,
+    SkipBack,
+    SkipForward,
+    Music,
+    Volume2
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +34,63 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
     const activeNoteId = pathname.split('/editor/')[1];
     const [search, setSearch] = useState('');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Music Player State
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = React.useRef<HTMLAudioElement>(null);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+    const [files, setFiles] = useState<string[]>([]);
+
+    // Initial Load Logic
+    React.useEffect(() => {
+        const loadMusic = async () => {
+            try {
+                // @ts-ignore
+                const musicFiles = await window.electron.getBundledMusic();
+                if (musicFiles && musicFiles.length > 0) {
+                    setFiles(musicFiles);
+                    if (audioRef.current) {
+                        audioRef.current.src = `music://${musicFiles[0]}`;
+                        audioRef.current.volume = 0.3;
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load bundled music", e);
+            }
+        };
+        loadMusic();
+    }, []);
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    const playNext = () => {
+        if (files.length === 0) return;
+        const nextIndex = (currentTrackIndex + 1) % files.length;
+        changeTrack(nextIndex);
+    };
+
+    const playPrev = () => {
+        if (files.length === 0) return;
+        const prevIndex = (currentTrackIndex - 1 + files.length) % files.length;
+        changeTrack(prevIndex);
+    };
+
+    const changeTrack = (index: number) => {
+        setCurrentTrackIndex(index);
+        if (audioRef.current && files.length > 0) {
+            audioRef.current.src = `music://${files[index]}`;
+            audioRef.current.play();
+            setIsPlaying(true);
+        }
+    };
 
     const filteredNotes = notes
         .filter(n => n.content.toLowerCase().includes(search.toLowerCase()))
@@ -148,6 +211,56 @@ export const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
                             </div>
                         ))
                     )}
+                </div>
+
+                {/* Music Player */}
+                <div className="px-4 py-2 border-t border-stone-200 dark:border-stone-800">
+                    <div className={`
+                        rounded-xl p-3 transition-all duration-300
+                        ${files.length > 0 ? 'bg-stone-100 dark:bg-stone-800/80' : 'hidden'}
+                    `}>
+                        {files.length > 0 && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between overflow-hidden">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <div className={`p-1.5 rounded-lg ${isPlaying ? 'bg-amber-100 text-amber-600 animate-pulse' : 'bg-stone-200 text-stone-500'}`}>
+                                            <Music size={14} />
+                                        </div>
+                                        <div className="flex flex-col overflow-hidden">
+                                            <span className="text-xs font-bold text-stone-700 dark:text-stone-300 truncate w-24">
+                                                {files[currentTrackIndex]?.split(/[/\\]/).pop()}
+                                            </span>
+                                            <span className="text-[10px] text-stone-500 truncate w-24">
+                                                {files.length} tracks
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between px-1">
+                                    <button onClick={playPrev} className="text-stone-400 hover:text-amber-600 transition">
+                                        <SkipBack size={14} />
+                                    </button>
+                                    <button
+                                        onClick={togglePlay}
+                                        className="w-8 h-8 flex items-center justify-center bg-stone-800 dark:bg-stone-100 text-stone-100 dark:text-stone-900 rounded-full hover:scale-105 transition-transform shadow-md"
+                                    >
+                                        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                                    </button>
+                                    <button onClick={playNext} className="text-stone-400 hover:text-amber-600 transition">
+                                        <SkipForward size={14} />
+                                    </button>
+                                </div>
+
+                                {/* Hidden Audio Element */}
+                                <audio
+                                    ref={audioRef}
+                                    onEnded={playNext}
+                                    onError={(e) => console.error("Audio Error", e)}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="p-4 border-t border-stone-200 dark:border-stone-800 space-y-1">

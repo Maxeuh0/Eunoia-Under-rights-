@@ -102,6 +102,46 @@ const CanvasFlow = () => {
         event.dataTransfer.effectAllowed = 'move';
     };
 
+    const applyTemplate = (type: 'eisenhower' | 'kanban' | 'mindmap') => {
+        const center = { x: 250, y: 150 };
+        const newNodes: Node[] = [];
+        const newEdges: Edge[] = [];
+        const timestamp = Date.now();
+
+        if (type === 'eisenhower') {
+            newNodes.push(
+                { id: `e-${timestamp}-1`, type: 'glass', position: { x: center.x, y: center.y }, data: { label: 'Do First' } },
+                { id: `e-${timestamp}-2`, type: 'glass', position: { x: center.x + 300, y: center.y }, data: { label: 'Schedule' } },
+                { id: `e-${timestamp}-3`, type: 'glass', position: { x: center.x, y: center.y + 200 }, data: { label: 'Delegate' } },
+                { id: `e-${timestamp}-4`, type: 'glass', position: { x: center.x + 300, y: center.y + 200 }, data: { label: 'Eliminate' } }
+            );
+        } else if (type === 'kanban') {
+            newNodes.push(
+                { id: `k-${timestamp}-1`, type: 'glass', position: { x: center.x, y: center.y }, data: { label: 'To Do' } },
+                { id: `k-${timestamp}-2`, type: 'glass', position: { x: center.x + 300, y: center.y }, data: { label: 'Doing' } },
+                { id: `k-${timestamp}-3`, type: 'glass', position: { x: center.x + 600, y: center.y }, data: { label: 'Done' } }
+            );
+        } else if (type === 'mindmap') {
+            const centerId = `m-${timestamp}-center`;
+            newNodes.push(
+                { id: centerId, type: 'glass', position: { x: center.x, y: center.y }, data: { label: 'Central Topic' } },
+                { id: `m-${timestamp}-1`, type: 'glass', position: { x: center.x - 250, y: center.y - 150 }, data: { label: 'Topic A' } },
+                { id: `m-${timestamp}-2`, type: 'glass', position: { x: center.x + 250, y: center.y - 150 }, data: { label: 'Topic B' } },
+                { id: `m-${timestamp}-3`, type: 'glass', position: { x: center.x - 250, y: center.y + 150 }, data: { label: 'Topic C' } },
+                { id: `m-${timestamp}-4`, type: 'glass', position: { x: center.x + 250, y: center.y + 150 }, data: { label: 'Topic D' } }
+            );
+            newEdges.push(
+                { id: `e-${timestamp}-1`, source: centerId, target: `m-${timestamp}-1`, type: 'smoothstep', animated: true },
+                { id: `e-${timestamp}-2`, source: centerId, target: `m-${timestamp}-2`, type: 'smoothstep', animated: true },
+                { id: `e-${timestamp}-3`, source: centerId, target: `m-${timestamp}-3`, type: 'smoothstep', animated: true },
+                { id: `e-${timestamp}-4`, source: centerId, target: `m-${timestamp}-4`, type: 'smoothstep', animated: true }
+            );
+        }
+
+        setNodes((nds) => nds.concat(newNodes));
+        setEdges((eds) => eds.concat(newEdges));
+    };
+
     return (
         <div className="w-full h-full glass-panel rounded-3xl overflow-hidden relative flex">
             {/* Notes Palette */}
@@ -118,6 +158,31 @@ const CanvasFlow = () => {
                     </div>
 
                     <div className="h-px bg-stone-200 dark:bg-stone-800 my-2"></div>
+
+                    <h3 className="font-serif font-bold text-sm mb-2 text-stone-500 uppercase tracking-wider">Templates</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => applyTemplate('eisenhower')}
+                            className="p-2 text-xs bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-stone-600 dark:text-stone-300 rounded border border-transparent hover:border-amber-200 transition-colors"
+                        >
+                            Eisenhower
+                        </button>
+                        <button
+                            onClick={() => applyTemplate('kanban')}
+                            className="p-2 text-xs bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-stone-600 dark:text-stone-300 rounded border border-transparent hover:border-amber-200 transition-colors"
+                        >
+                            Kanban
+                        </button>
+                        <button
+                            onClick={() => applyTemplate('mindmap')}
+                            className="p-2 text-xs bg-stone-100 dark:bg-stone-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-stone-600 dark:text-stone-300 rounded border border-transparent hover:border-amber-200 transition-colors col-span-2"
+                        >
+                            Mind Map
+                        </button>
+                    </div>
+
+                    <div className="h-px bg-stone-200 dark:bg-stone-800 my-2"></div>
+                    <h3 className="font-serif font-bold text-sm mb-2 text-stone-500 uppercase tracking-wider">Thoughts</h3>
 
                     {/* Existing Notes */}
                     {notes.map((note) => (

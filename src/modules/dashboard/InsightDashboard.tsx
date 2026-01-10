@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { analyzeSentiment, getWordFrequency } from './sentiment';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { format } from 'date-fns';
+import { format, subDays, eachDayOfInterval, isSameDay } from 'date-fns';
 
 const InsightDashboard: React.FC = () => {
     const { notes, settings } = useStore();
@@ -34,7 +34,38 @@ const InsightDashboard: React.FC = () => {
 
         const momentsOfClarity = scoredNotes.slice(0, 5).filter(n => n.score > 0);
 
-        return { history, words, momentsOfClarity };
+        // Heatmap Data (Last 365 days)
+        const today = new Date();
+        const yearAgo = subDays(today, 365);
+        const days = eachDayOfInterval({ start: yearAgo, end: today });
+
+        const heatmap = days.map(day => {
+            const count = notes.filter(n => isSameDay(new Date(n.updatedAt), day)).length;
+            return {
+                date: day,
+                count,
+                level: Math.min(4, count) // 0-4 scale
+            };
+        });
+
+        // Calculate Streak
+        let streak = 0;
+        let currentDay = today;
+        // Check today first
+        if (notes.some(n => isSameDay(new Date(n.updatedAt), currentDay))) {
+            streak++;
+        }
+        // Check backwards
+        while (true) {
+            currentDay = subDays(currentDay, 1);
+            if (notes.some(n => isSameDay(new Date(n.updatedAt), currentDay))) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        return { history, words, momentsOfClarity, heatmap, streak };
     }, [notes]);
 
     const isDark = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -45,6 +76,41 @@ const InsightDashboard: React.FC = () => {
                 <h2 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">Insights</h2>
                 <p className="text-stone-500 mt-2">patterns in your sanctuary.</p>
             </header>
+
+            {/* Consistency & Streak */}
+            <section className="glass-card p-6 rounded-2xl">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-medium text-stone-700 dark:text-stone-300">Consistency</h3>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-stone-500">Current Streak:</span>
+                        <span className="text-xl font-bold text-amber-600 dark:text-amber-500">{analytics.streak} days</span>
+                        <span className="text-lg">🔥</span>
+                    </div>
+                </div>
+
+                <div className="w-full overflow-x-auto CustomScrollbar pb-2">
+                    <div className="flex gap-1 min-w-max">
+                        {/* Render weeks columns (simplified as just a long flex row for now, or grouped by weeks) */}
+                        {/* Let's do a simple grid of 7 rows (weeks) x 52 cols */}
+                        <div className="grid grid-rows-7 grid-flow-col gap-1">
+                            {analytics.heatmap.map((day) => (
+                                <div
+                                    key={day.date.toISOString()}
+                                    title={`${format(day.date, 'MMM d, yyyy')}: ${day.count} notes`}
+                                    className={`
+                                        w-3 h-3 rounded-sm transition-colors
+                                        ${day.level === 0 ? 'bg-stone-100 dark:bg-stone-800' : ''}
+                                        ${day.level === 1 ? 'bg-amber-200 dark:bg-amber-900/40' : ''}
+                                        ${day.level === 2 ? 'bg-amber-300 dark:bg-amber-800' : ''}
+                                        ${day.level === 3 ? 'bg-amber-400 dark:bg-amber-700' : ''}
+                                        ${day.level >= 4 ? 'bg-amber-600 dark:bg-amber-600' : ''}
+                                    `}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             {/* Chart */}
             <section className="glass-card p-6 rounded-2xl">

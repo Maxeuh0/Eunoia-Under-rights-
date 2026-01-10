@@ -1,7 +1,7 @@
 {
   "name": "eunoia-app",
   "private": true,
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "A Zen Personal Knowledge Management App",
   "author": "Eunoia Team",
   "type": "module",
@@ -36,7 +36,13 @@
       "icon": "build/icon.ico",
       "verifyUpdateCodeSignature": false,
       "signAndEditExecutable": false,
-      "asar": true
+      "asar": true,
+      "extraResources": [
+        {
+          "from": "public/music",
+          "to": "music"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -46,7 +52,7 @@
       "shortcutName": "Eunoia",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
-      "artifactName": "${productName} Setup ${version}.${ext}"
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     }
   },
   "dependencies": {

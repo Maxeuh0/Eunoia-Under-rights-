@@ -13,5 +13,8 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.on('update-status', handler);
         // Return cleanup function
         return () => ipcRenderer.removeListener('update-status', handler);
-    }
+    },
+
+    // Music Player API
+    getBundledMusic: () => ipcRenderer.invoke('get-bundled-music'),
 });

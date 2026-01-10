@@ -5,8 +5,9 @@ import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Save, Eye, EyeOff, Maximize2, Minimize2, Trash2 } from 'lucide-react';
+import { Save, Eye, EyeOff, Maximize2, Minimize2, Trash2, Clock, Type, Smile, Meh, Frown } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
+import { analyzeSentiment } from '../dashboard/sentiment';
 import 'prismjs/components/prism-markdown';
 import 'prismjs/themes/prism.css';
 
@@ -24,6 +25,10 @@ const ZenEditor: React.FC = () => {
     // Timer State
     const [timerActive, setTimerActive] = useState(false);
     const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes default
+
+    // Smart Linking State
+    const [isLinking, setIsLinking] = useState(false);
+    const [linkSearch, setLinkSearch] = useState('');
 
     // Timer Logic
     useEffect(() => {
@@ -250,7 +255,20 @@ const ZenEditor: React.FC = () => {
                     <Editor
                         key={noteId} // FORCE REMOUNT on note change
                         value={content || ''}
-                        onValueChange={setContent}
+                        onValueChange={(code) => {
+                            setContent(code);
+                            // Simple trigger detection
+                            const cursorIndex = (document.querySelector('textarea') as HTMLTextAreaElement)?.selectionStart || 0;
+                            const textBeforeCursor = code.substring(0, cursorIndex);
+                            const match = textBeforeCursor.match(/\[\[([^\]]*)$/);
+
+                            if (match) {
+                                setLinkSearch(match[1]);
+                                setIsLinking(true);
+                            } else {
+                                setIsLinking(false);
+                            }
+                        }}
                         highlight={safeHighlight}
                         padding={24}
                         autoFocus
@@ -262,6 +280,47 @@ const ZenEditor: React.FC = () => {
                             lineHeight: '1.6',
                         }}
                     />
+
+                    {/* Linking Suggestion Popup */}
+                    {isLinking && (
+                        <div className="absolute bottom-16 left-8 z-50 w-64 glass-panel max-h-60 overflow-y-auto rounded-xl shadow-xl border border-amber-200 dark:border-amber-800 animate-fade-in group">
+                            <div className="p-2 text-xs font-bold text-stone-400 uppercase tracking-wider sticky top-0 bg-white/90 dark:bg-stone-900/90 backdrop-blur-sm">
+                                Link to...
+                            </div>
+                            {notes
+                                .filter(n => n.id !== noteId && n.content.toLowerCase().includes(linkSearch.toLowerCase()))
+                                .map(note => (
+                                    <button
+                                        key={note.id}
+                                        onClick={() => {
+                                            const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                                            const cursorIndex = textarea?.selectionStart || 0;
+                                            const textBefore = content.substring(0, cursorIndex);
+                                            const textAfter = content.substring(cursorIndex);
+
+                                            // Replace the [[query part
+                                            const match = textBefore.match(/\[\[([^\]]*)$/);
+                                            if (match) {
+                                                const start = match.index!;
+                                                const title = note.content.split('\n')[0] || 'Untitled';
+                                                const newContent = content.substring(0, start) + `[${title}](/editor/${note.id})` + textAfter;
+                                                setContent(newContent);
+                                                setIsLinking(false);
+                                                // Restore focus roughly?
+                                                setTimeout(() => textarea.focus(), 50);
+                                            }
+                                        }}
+                                        className="w-full text-left px-3 py-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-sm text-stone-700 dark:text-stone-300 truncate transition-colors"
+                                    >
+                                        {note.content.split('\n')[0] || 'Untitled'}
+                                    </button>
+                                ))
+                            }
+                            {notes.filter(n => n.id !== noteId && n.content.toLowerCase().includes(linkSearch.toLowerCase())).length === 0 && (
+                                <div className="p-3 text-sm text-stone-400 italic">No matching notes found.</div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
 
@@ -281,6 +340,50 @@ const ZenEditor: React.FC = () => {
                         </ReactMarkdown>
                     </div>
                 )}
+            </div>
+
+            {/* Stats Bar */}
+            <div className={`
+                absolute bottom-4 left-1/2 transform -translate-x-1/2 
+                flex items-center gap-6 px-4 py-2 
+                bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm 
+                rounded-full shadow-sm border border-stone-200 dark:border-stone-700
+                transition-opacity duration-300
+                ${isFocusMode ? 'opacity-0 hover:opacity-100' : 'opacity-100'}
+            `}>
+                {/* Word Count */}
+                <div className="flex items-center gap-2 text-xs font-mono text-stone-500">
+                    <Type size={14} />
+                    <span>{content?.split(/\s+/).filter(w => w.length > 0).length || 0} words</span>
+                </div>
+
+                <div className="w-px h-3 bg-stone-300 dark:bg-stone-600" />
+
+                {/* Reading Time */}
+                <div className="flex items-center gap-2 text-xs font-mono text-stone-500">
+                    <Clock size={14} />
+                    <span>{Math.ceil((content?.split(/\s+/).filter(w => w.length > 0).length || 0) / 200)} min</span>
+                </div>
+
+                <div className="w-px h-3 bg-stone-300 dark:bg-stone-600" />
+
+                {/* Sentiment */}
+                <div className="flex items-center gap-2 text-xs font-mono text-stone-500">
+                    {(() => {
+                        const score = analyzeSentiment(content || '');
+                        if (score > 0.5) return <Smile size={14} className="text-green-500" />;
+                        if (score < -0.5) return <Frown size={14} className="text-red-500" />;
+                        return <Meh size={14} className="text-stone-400" />;
+                    })()}
+                    <span>
+                        {(() => {
+                            const score = analyzeSentiment(content || '');
+                            if (score > 0.5) return 'Positive';
+                            if (score < -0.5) return 'Troubled';
+                            return 'Neutral';
+                        })()}
+                    </span>
+                </div>
             </div>
         </div>
     );

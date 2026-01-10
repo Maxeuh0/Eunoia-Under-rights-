@@ -27,9 +27,26 @@ const MindWeaver: React.FC = () => {
     const navigate = useNavigate();
     const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    // Extract all unique tags
+    const allTags = useMemo(() => {
+        const tags = new Set<string>();
+        notes.forEach(note => note.tags.forEach(t => tags.add(t)));
+        return Array.from(tags).sort();
+    }, [notes]);
+
     // Prepare Graph Data
     const data = useMemo(() => {
-        const nodes: GraphNode[] = notes.map(note => ({
+        // Filter nodes based on search and tags
+        const filteredNotes = notes.filter(note => {
+            const matchesSearch = note.content.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesTags = selectedTags.length === 0 || selectedTags.some(t => note.tags.includes(t));
+            return matchesSearch && matchesTags;
+        });
+
+        const nodes: GraphNode[] = filteredNotes.map(note => ({
             id: note.id,
             title: note.content.split('\n')[0] || 'Untitled',
             group: 1,
@@ -39,11 +56,12 @@ const MindWeaver: React.FC = () => {
 
         const links: GraphLink[] = [];
         const linkSet = new Set<string>();
+        const nodeIds = new Set(nodes.map(n => n.id)); // Optimization: only link if both nodes exist
 
-        for (let i = 0; i < notes.length; i++) {
-            for (let j = i + 1; j < notes.length; j++) {
-                const n1 = notes[i];
-                const n2 = notes[j];
+        for (let i = 0; i < filteredNotes.length; i++) {
+            for (let j = i + 1; j < filteredNotes.length; j++) {
+                const n1 = filteredNotes[i];
+                const n2 = filteredNotes[j];
 
                 // Find common tags
                 const commonTags = n1.tags.filter(tag => n2.tags.includes(tag));
@@ -63,7 +81,7 @@ const MindWeaver: React.FC = () => {
         }
 
         return { nodes, links };
-    }, [notes]);
+    }, [notes, searchQuery, selectedTags]);
 
     // D3 Simulation
     useEffect(() => {
@@ -257,6 +275,42 @@ const MindWeaver: React.FC = () => {
     return (
         <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-stone-50 dark:bg-stone-900 transition-colors">
             <svg ref={svgRef} className="w-full h-full cursor-move" style={{ maxWidth: '100%', maxHeight: '100%' }}></svg>
+
+            {/* Controls Overlay */}
+            <div className="absolute top-4 left-4 flex flex-col gap-4 max-w-xs pointer-events-none">
+                {/* Search */}
+                <div className="glass-panel p-3 rounded-xl pointer-events-auto shadow-sm">
+                    <input
+                        type="text"
+                        placeholder="Filter graph..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-transparent border-none focus:outline-none text-sm text-stone-800 dark:text-stone-100 placeholder-stone-400"
+                    />
+                </div>
+
+                {/* Tag Filters */}
+                {allTags.length > 0 && (
+                    <div className="glass-panel p-3 rounded-xl pointer-events-auto shadow-sm flex flex-wrap gap-2 max-h-[40vh] overflow-y-auto CustomScrollbar">
+                        {allTags.map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => setSelectedTags(prev =>
+                                    prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                                )}
+                                className={`
+                                    text-xs px-2 py-1 rounded-full border transition-all
+                                    ${selectedTags.includes(tag)
+                                        ? 'bg-amber-100 dark:bg-amber-900/40 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-100'
+                                        : 'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700'}
+                                `}
+                            >
+                                #{tag}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Tooltip / Info Panel */}
             {hoveredNode && (
